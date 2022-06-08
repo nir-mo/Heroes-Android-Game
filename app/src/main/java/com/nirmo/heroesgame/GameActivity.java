@@ -7,6 +7,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -147,6 +148,8 @@ public class GameActivity extends AppCompatActivity {
                                 // TODO: Decide what to do when game is over.
                                 isGameOver();
                             }
+
+                            gameViewState = GameViewState.IDLE;
                         }
                     });
 
@@ -156,8 +159,6 @@ public class GameActivity extends AppCompatActivity {
                         animator3.setDuration(2000);
                         animator3.start();
                     }
-
-                    gameViewState = GameViewState.IDLE;
                 }
                 break;
         }
