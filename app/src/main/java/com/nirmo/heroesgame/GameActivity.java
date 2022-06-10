@@ -141,9 +141,6 @@ public class GameActivity extends AppCompatActivity {
                             if (gameViewState == GameViewState.DRAGGING_BALL) {
                                 killVirus(draggedVirus);
 
-                                // play some random sound.
-                                playRandomSound();
-
                                 // check if game is over.
                                 // TODO: Decide what to do when game is over.
                                 isGameOver();
@@ -196,10 +193,6 @@ public class GameActivity extends AppCompatActivity {
 
         virus.setVisibility(View.INVISIBLE);
         isVirusAlive.put(virus, false);
-    }
-
-    private void playRandomSound() {
-        // TODO: play music.
     }
 
     private boolean isGameOver() {
