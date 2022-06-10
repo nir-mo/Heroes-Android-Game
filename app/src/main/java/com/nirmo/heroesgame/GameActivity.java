@@ -22,16 +22,22 @@ import com.nirmo.heroesgame.utils.MathUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GameActivity extends AppCompatActivity {
-    private static final int NUMBER_OF_VIRUSES = 3;
 
-    private View viruses[] = new View[NUMBER_OF_VIRUSES];
-    private Map<View, Boolean> isVirusAlive = new HashMap();
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class GameActivity extends AppCompatActivity {
+    private static final int NUMBER_OF_ccellES = 3;
+
+    private View ccelles[] = new View[NUMBER_OF_ccellES];
+    private Map<View, Boolean> isCcellAlive = new HashMap();
     private GifView butterfly;
     private GameViewState gameViewState = GameViewState.IDLE;
     private float dX, dY;
     private Point initialButterflyPosition;
-    private View draggedVirus;
+    private View draggedCcell;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,35 +56,39 @@ public class GameActivity extends AppCompatActivity {
         });
     }
 
+    public void PlayBackgroundSound(View view) {
+        Intent intent = new Intent(GameActivity.this, BackgroundSoundService.class);
+        startService(intent);
+    }
     private void onRenderingReady(FrameLayout board) {
-        initGame(board, NUMBER_OF_VIRUSES);
+        initGame(board, NUMBER_OF_ccellES);
     }
 
-    private void initGame(FrameLayout board, int numberOfViruses) {
-        viruses = new View[numberOfViruses];
+    private void initGame(FrameLayout board, int numberOfCcelles) {
+        ccelles = new View[numberOfCcelles];
 
         // TODO: Choose different image on every time we start the game.
         ImageView background = findViewById(R.id.background);
 
-        for (int i = 0; i < viruses.length; i++) {
-            viruses[i] = generateVirus(background, board);
-            isVirusAlive.put(viruses[i], true);
+        for (int i = 0; i < ccelles.length; i++) {
+            ccelles[i] = generateCcell(background, board);
+            isCcellAlive.put(ccelles[i], true);
         }
 
         // TODO: Make arbitrary number of butterflies.
         butterfly = generateButterfly(board);
     }
 
-    private View generateVirus(View innerView, FrameLayout outerView) {
-        int virusWidth  = outerView.getMeasuredWidth();
-        ImageView virus = (ImageView) getLayoutInflater().inflate(R.layout.virus_layout, null);
+    private View generateCcell(View innerView, FrameLayout outerView) {
+        int ccellWidth  = outerView.getMeasuredWidth();
+        ImageView ccell = (ImageView) getLayoutInflater().inflate(R.layout.ccell_layout, null);
         FrameLayout.LayoutParams layoutParams =
-                new FrameLayout.LayoutParams(virusWidth / 5, virusWidth / 5);
-        virus.setLayoutParams(layoutParams);
-        virus.setX(MathUtils.getRandomInRange(innerView.getLeft(), innerView.getRight()));
-        virus.setY(MathUtils.getRandomInRange(innerView.getTop(), innerView.getBottom()));
-        outerView.addView(virus);
-        return virus;
+                new FrameLayout.LayoutParams(ccellWidth / 5, ccellWidth / 5);
+        ccell.setLayoutParams(layoutParams);
+        ccell.setX(MathUtils.getRandomInRange(innerView.getLeft(), innerView.getRight()));
+        ccell.setY(MathUtils.getRandomInRange(innerView.getTop(), innerView.getBottom()));
+        outerView.addView(ccell);
+        return ccell;
     }
 
     private GifView generateButterfly(FrameLayout outerView) {
@@ -122,9 +132,9 @@ public class GameActivity extends AppCompatActivity {
             case MotionEvent.ACTION_UP:
                 // Drop the butterfly.
                 if (gameViewState == GameViewState.DRAGGING_BUTTERFLY) {
-                    // check we butterfly finds a virus
-                    draggedVirus = doesButterflyTouchingAVirus(butterfly, viruses);
-                    if (draggedVirus != null) {
+                    // check we butterfly finds a ccell
+                    draggedCcell = doesButterflyTouchingAccell(butterfly, ccelles);
+                    if (draggedCcell != null) {
                         gameViewState = GameViewState.DRAGGING_BALL;
                     }
 
@@ -139,7 +149,7 @@ public class GameActivity extends AppCompatActivity {
                         @Override
                         public void onAnimationEnd(Animator animator) {
                             if (gameViewState == GameViewState.DRAGGING_BALL) {
-                                killVirus(draggedVirus);
+                                killCcell(draggedCcell);
 
                                 // play some random sound.
                                 playRandomSound();
@@ -154,8 +164,8 @@ public class GameActivity extends AppCompatActivity {
                     });
 
                     if (gameViewState == GameViewState.DRAGGING_BALL) {
-                        // Animate the virus..  make him follow the butterfly.
-                        ObjectAnimator animator3 = ObjectAnimator.ofFloat(draggedVirus, "x", "y", path);
+                        // Animate the ccell..  make him follow the butterfly.
+                        ObjectAnimator animator3 = ObjectAnimator.ofFloat(draggedCcell, "x", "y", path);
                         animator3.setDuration(2000);
                         animator3.start();
                     }
@@ -169,11 +179,11 @@ public class GameActivity extends AppCompatActivity {
         return getViewBoundingBox(butterfly).contains((int) event.getX(), (int) event.getY());
     }
 
-    private View doesButterflyTouchingAVirus(View butterfly, View viruses[]) {
+    private View doesButterflyTouchingAccell(View butterfly, View ccelles[]) {
         Rect butterflyRect = getViewBoundingBox(butterfly);
-        for (View virus: viruses) {
-            if (butterflyRect.intersect(getViewBoundingBox(virus))) {
-                return virus;
+        for (View ccell: ccelles) {
+            if (butterflyRect.intersect(getViewBoundingBox(ccell))) {
+                return ccell;
             }
         }
         return null;
@@ -189,13 +199,13 @@ public class GameActivity extends AppCompatActivity {
         return new Rect(x, y, x + w, y + h);
     }
 
-    private void killVirus(View virus) {
-        if (virus == null) {
+    private void killCcell(View ccell) {
+        if (ccell == null) {
             return;
         }
 
-        virus.setVisibility(View.INVISIBLE);
-        isVirusAlive.put(virus, false);
+        ccell.setVisibility(View.INVISIBLE);
+        isCcellAlive.put(ccell, false);
     }
 
     private void playRandomSound() {
@@ -203,8 +213,8 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private boolean isGameOver() {
-        for (View virus : viruses) {
-            if (isVirusAlive.get(virus)) {
+        for (View ccell : ccelles) {
+            if (isCcellAlive.get(ccell)) {
                 return false;
             }
         }

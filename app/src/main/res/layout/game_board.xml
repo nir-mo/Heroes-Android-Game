@@ -5,12 +5,13 @@
     android:id="@+id/game_board"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".GameActivity" >
+    tools:context=".GameActivity"
+    android:background="@drawable/background">
 
     <ImageView
         android:id="@+id/background"
-        android:layout_width="212dp"
-        android:layout_height="425dp"
+        android:layout_width="166dp"
+        android:layout_height="170dp"
         android:layout_gravity="center"
         android:src="@drawable/flower" />
 
