@@ -5,9 +5,7 @@ import android.animation.ObjectAnimator;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -29,15 +27,22 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class GameActivity extends AppCompatActivity {
-    private static final int NUMBER_OF_ccellES = 3;
+    private static final int NUMBER_OF_CCEllS = 4;
+    private static final int NUMBER_OF_BUTTERFLIES = 4;
+    private static final int BUTTERFLIES_OPTIONS[] = {
+            R.raw.butterfly1,
+            R.raw.butterfly3
+    };
 
-    private View ccelles[] = new View[NUMBER_OF_ccellES];
+    private View ccells[] = new View[NUMBER_OF_CCEllS];
     private Map<View, Boolean> isCcellAlive = new HashMap();
-    private GifView butterfly;
+    private GifView butterflies[] = new GifView[NUMBER_OF_BUTTERFLIES];
     private GameViewState gameViewState = GameViewState.IDLE;
     private float dX, dY;
     private Point initialButterflyPosition;
     private View draggedCcell;
+    private View draggedButterfly;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,22 +66,24 @@ public class GameActivity extends AppCompatActivity {
         startService(intent);
     }
     private void onRenderingReady(FrameLayout board) {
-        initGame(board, NUMBER_OF_ccellES);
+        initGame(board, NUMBER_OF_CCEllS, NUMBER_OF_BUTTERFLIES);
     }
 
-    private void initGame(FrameLayout board, int numberOfCcelles) {
-        ccelles = new View[numberOfCcelles];
+    private void initGame(FrameLayout board, int numberOfCcells, int numberOfButterflies) {
+        ccells = new View[numberOfCcells];
+        butterflies = new GifView[numberOfButterflies];
 
         // TODO: Choose different image on every time we start the game.
         ImageView background = findViewById(R.id.background);
 
-        for (int i = 0; i < ccelles.length; i++) {
-            ccelles[i] = generateCcell(background, board);
-            isCcellAlive.put(ccelles[i], true);
+        for (int i = 0; i < ccells.length; i++) {
+            ccells[i] = generateCcell(background, board);
+            isCcellAlive.put(ccells[i], true);
         }
 
-        // TODO: Make arbitrary number of butterflies.
-        butterfly = generateButterfly(board);
+        for (int i = 0; i < butterflies.length; i++) {
+            butterflies[i] = generateButterfly(board);
+        }
     }
 
     private View generateCcell(View innerView, FrameLayout outerView) {
@@ -93,36 +100,69 @@ public class GameActivity extends AppCompatActivity {
 
     private GifView generateButterfly(FrameLayout outerView) {
         GifView butterfly = (GifView) getLayoutInflater().inflate(R.layout.butterfly_layout, null);
-        // TODO: Choose randomly an image of butterfly from a collection of images...
-        butterfly.setGif(R.raw.animated_gif);
 
-        // TODO: Set butterfly random position.
+        // Choose random butterfly image.
+        butterfly.setGif(BUTTERFLIES_OPTIONS[MathUtils.getRandomInRange(0, BUTTERFLIES_OPTIONS.length)]);
         outerView.addView(butterfly);
+
+        int butterflyWidth  = outerView.getMeasuredWidth() / 4;
+        FrameLayout.LayoutParams layoutParams =
+                new FrameLayout.LayoutParams(butterflyWidth, butterflyWidth);
+        butterfly.setLayoutParams(layoutParams);
+        int x,y;
+        do {
+            x = MathUtils.getRandomInRange(outerView.getLeft() + butterflyWidth, outerView.getRight() - butterflyWidth);
+            y = MathUtils.getRandomInRange(outerView.getTop() + butterflyWidth, outerView.getBottom() - butterflyWidth);
+            butterfly.setTranslationX(x);
+            butterfly.setTranslationY(y);
+        } while (hasCollisions(butterfly));
         return butterfly;
+    }
+
+    private boolean hasCollisions(View butterfly) {
+        Rect butterflyRect = getViewBoundingBox(butterfly);
+        for (View ccell: ccells) {
+            if (ccell == null) {
+                continue;
+            }
+
+            if (butterflyRect.intersect(getViewBoundingBox(ccell))) {
+                return true;
+            }
+        }
+
+        for (View b : butterflies) {
+            if (b == null) {
+                continue;
+            }
+
+            if (butterflyRect.intersect(getViewBoundingBox(b))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (butterfly == null) {
-            return false;
-        }
-
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 // check if touching butterfly
-                if (doesUserTouchingButterfly(event, butterfly) && gameViewState == GameViewState.IDLE) {
+                draggedButterfly = doesUserTouchingButterfly(event, butterflies);
+                if (draggedButterfly != null && gameViewState == GameViewState.IDLE) {
                     gameViewState = GameViewState.DRAGGING_BUTTERFLY;
-                    dX = butterfly.getX() - event.getRawX();
-                    dY = butterfly.getY() - event.getRawY();
+                    dX = draggedButterfly.getX() - event.getRawX();
+                    dY = draggedButterfly.getY() - event.getRawY();
                     initialButterflyPosition = new Point(
-                            (int) butterfly.getX(),
-                            (int) butterfly.getY());
+                            (int) draggedButterfly.getX(),
+                            (int) draggedButterfly.getY());
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (gameViewState == GameViewState.DRAGGING_BUTTERFLY) {
                     // Now we are dragging a butterfly...
-                    butterfly.animate()
+                    draggedButterfly.animate()
                             .x(event.getRawX() + dX)
                             .y(event.getRawY() + dY)
                             .setDuration(0)
@@ -133,16 +173,16 @@ public class GameActivity extends AppCompatActivity {
                 // Drop the butterfly.
                 if (gameViewState == GameViewState.DRAGGING_BUTTERFLY) {
                     // check we butterfly finds a ccell
-                    draggedCcell = doesButterflyTouchingAccell(butterfly, ccelles);
+                    draggedCcell = doesButterflyTouchingAccell(draggedButterfly, ccells);
                     if (draggedCcell != null) {
                         gameViewState = GameViewState.DRAGGING_BALL;
                     }
 
                     // Bring the butterfly back to its initial place.
                     Path path = new Path();
-                    path.moveTo(butterfly.getX(), butterfly.getY());
+                    path.moveTo(draggedButterfly.getX(), draggedButterfly.getY());
                     path.lineTo(initialButterflyPosition.x, initialButterflyPosition.y);
-                    ObjectAnimator animator = ObjectAnimator.ofFloat(butterfly, "x", "y", path);
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(draggedButterfly, "x", "y", path);
                     animator.setDuration(2000);
                     animator.start();
                     animator.addListener(new DefaultAnimatorListener() {
@@ -151,12 +191,11 @@ public class GameActivity extends AppCompatActivity {
                             if (gameViewState == GameViewState.DRAGGING_BALL) {
                                 killCcell(draggedCcell);
 
-                                // play some random sound.
-                                playRandomSound();
-
                                 // check if game is over.
                                 // TODO: Decide what to do when game is over.
                                 isGameOver();
+
+                                draggedButterfly = null;
                             }
 
                             gameViewState = GameViewState.IDLE;
@@ -175,13 +214,18 @@ public class GameActivity extends AppCompatActivity {
         return true;
     }
 
-    private boolean doesUserTouchingButterfly(MotionEvent event, View butterfly) {
-        return getViewBoundingBox(butterfly).contains((int) event.getX(), (int) event.getY());
+    private View doesUserTouchingButterfly(MotionEvent event, View butterflies[]) {
+        for (View butterfly : butterflies) {
+            if (getViewBoundingBox(butterfly).contains((int) event.getX(), (int) event.getY())) {
+                return butterfly;
+            }
+        }
+        return null;
     }
 
-    private View doesButterflyTouchingAccell(View butterfly, View ccelles[]) {
+    private View doesButterflyTouchingAccell(View butterfly, View ccells[]) {
         Rect butterflyRect = getViewBoundingBox(butterfly);
-        for (View ccell: ccelles) {
+        for (View ccell: ccells) {
             if (butterflyRect.intersect(getViewBoundingBox(ccell))) {
                 return ccell;
             }
@@ -213,7 +257,7 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private boolean isGameOver() {
-        for (View ccell : ccelles) {
+        for (View ccell : ccells) {
             if (isCcellAlive.get(ccell)) {
                 return false;
             }
