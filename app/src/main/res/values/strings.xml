@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">HeroesGame</string>
+    <string name="dialog_start_game">HAPPILY START</string>
+    <string name="start">START</string>
 </resources>
