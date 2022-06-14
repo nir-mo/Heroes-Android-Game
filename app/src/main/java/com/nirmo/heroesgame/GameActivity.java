@@ -2,10 +2,12 @@ package com.nirmo.heroesgame;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -24,11 +26,14 @@ import java.util.Map;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.MediaController;
+import android.widget.VideoView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 public class GameActivity extends AppCompatActivity {
-    private static final int NUMBER_OF_CCEllS = 4;
-    private static final int NUMBER_OF_BUTTERFLIES = 4;
+    private static final int NUMBER_OF_CCEllS = 3;
+    private static final int NUMBER_OF_BUTTERFLIES = 3;
     private static final int BUTTERFLIES_OPTIONS[] = {
             R.raw.butterfly1,
             R.raw.butterfly3
@@ -42,13 +47,13 @@ public class GameActivity extends AppCompatActivity {
     private Point initialButterflyPosition;
     private View draggedCcell;
     private View draggedButterfly;
-
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_board);
-
+        context = this;
         FrameLayout board = (FrameLayout) findViewById(R.id.game_board);
 
         ViewTreeObserver vto = board.getViewTreeObserver();
@@ -190,12 +195,34 @@ public class GameActivity extends AppCompatActivity {
                         public void onAnimationEnd(Animator animator) {
                             if (gameViewState == GameViewState.DRAGGING_BALL) {
                                 killCcell(draggedCcell);
-
+                                draggedButterfly = null;
                                 // check if game is over.
                                 // TODO: Decide what to do when game is over.
-                                isGameOver();
+                                if (isGameOver()) {
+                                    new CountDownTimer(30000, 1000) {
 
-                                draggedButterfly = null;
+                                        public void onTick(long millisUntilFinished) {
+                                            //mTextField.setText("Clean");
+                                        }
+
+                                        public void onFinish() {
+                                            setContentView(R.layout.game_end_board);
+                                            VideoView videoView = (VideoView) findViewById(R.id.VideoView);  //casting to VideoView is not Strictly required above API level 26
+                                            videoView.setVideoPath("android.resource://" + getPackageName() + "/" + R.raw.gamefinish); //set the path of the video that we need to use in our VideoView
+                                            videoView.start();  //start() method of the VideoView class will start the video to play
+                                            MediaController mediaController = new MediaController(context);
+                                            //link mediaController to videoView
+                                            mediaController.setAnchorView(videoView);
+                                            //allow mediaController to control our videoView
+                                            videoView.setMediaController(mediaController);
+                                            videoView.start();
+
+                                        }
+                                    }.start();
+
+                                }
+
+
                             }
 
                             gameViewState = GameViewState.IDLE;

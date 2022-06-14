@@ -10,12 +10,20 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentActivity;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.MediaController;
+import android.widget.VideoView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,19 +33,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.game_start_board);
         FrameLayout board = (FrameLayout) findViewById(R.id.game_start_board);
 
-    Button button = (Button) findViewById(R.id.button_send);
-    button.setOnClickListener(new View.OnClickListener() {
-        public void onClick(View view) {
-            // Do something in response to button click
-            Intent intent = new Intent(view.getContext(), GameActivity.class);
-            view.getContext().startActivity(intent);
-        }
-    });
-
+        Button button = (Button) findViewById(R.id.button_send);
+        button.setOnClickListener(new View.OnClickListener() {
+                                      public void onClick(View view) {
+                                          // Do something in response to button click
+                                          Intent intent = new Intent(view.getContext(), GameActivity.class);
+                                          view.getContext().startActivity(intent);
+                                      }
+                                  }
+        );
+    }
 
     }
 
-}
 //
 //    @NonNull
 //    @Override
