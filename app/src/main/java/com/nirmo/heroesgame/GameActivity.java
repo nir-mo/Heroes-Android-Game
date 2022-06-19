@@ -6,8 +6,11 @@ import android.content.Context;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.provider.SyncStateContract;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -21,6 +24,7 @@ import com.nirmo.heroesgame.utils.MathUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 
 import android.content.Intent;
@@ -32,11 +36,14 @@ import android.widget.VideoView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class GameActivity extends AppCompatActivity {
-    private static final int NUMBER_OF_CCEllS = 3;
-    private static final int NUMBER_OF_BUTTERFLIES = 3;
+    private static final int NUMBER_OF_CCEllS = 18;
+    private static final int NUMBER_OF_BUTTERFLIES = 18;
     private static final int BUTTERFLIES_OPTIONS[] = {
             R.raw.butterfly1,
-            R.raw.butterfly3
+            R.raw.butterfly2,
+            R.raw.butterfly3,
+            R.raw.butterfly4,
+            R.raw.butterfly5
     };
 
     private View ccells[] = new View[NUMBER_OF_CCEllS];
@@ -48,6 +55,12 @@ public class GameActivity extends AppCompatActivity {
     private View draggedCcell;
     private View draggedButterfly;
     private Context context;
+
+    private static final int BOMBA_OPTIONS[] = {
+            R.raw.bomba1,
+            R.raw.bomba2,
+            R.raw.bomba3
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,8 +99,10 @@ public class GameActivity extends AppCompatActivity {
             isCcellAlive.put(ccells[i], true);
         }
 
+        ImageView facebox = findViewById(R.id.facebox);
+
         for (int i = 0; i < butterflies.length; i++) {
-            butterflies[i] = generateButterfly(board);
+            butterflies[i] = generateButterfly(facebox, board);
         }
     }
 
@@ -103,7 +118,7 @@ public class GameActivity extends AppCompatActivity {
         return ccell;
     }
 
-    private GifView generateButterfly(FrameLayout outerView) {
+    private GifView generateButterfly(View innerView, FrameLayout outerView) {
         GifView butterfly = (GifView) getLayoutInflater().inflate(R.layout.butterfly_layout, null);
 
         // Choose random butterfly image.
@@ -120,11 +135,11 @@ public class GameActivity extends AppCompatActivity {
             y = MathUtils.getRandomInRange(outerView.getTop() + butterflyWidth, outerView.getBottom() - butterflyWidth);
             butterfly.setTranslationX(x);
             butterfly.setTranslationY(y);
-        } while (hasCollisions(butterfly));
+        } while (hasCollisions(butterfly, innerView));
         return butterfly;
     }
 
-    private boolean hasCollisions(View butterfly) {
+    private boolean hasCollisions(View butterfly, View facebox) {
         Rect butterflyRect = getViewBoundingBox(butterfly);
         for (View ccell: ccells) {
             if (ccell == null) {
@@ -144,6 +159,9 @@ public class GameActivity extends AppCompatActivity {
             if (butterflyRect.intersect(getViewBoundingBox(b))) {
                 return true;
             }
+        }
+        if (butterflyRect.intersect(getViewBoundingBox(facebox))) {
+            return true;
         }
 
         return false;
@@ -197,9 +215,8 @@ public class GameActivity extends AppCompatActivity {
                                 killCcell(draggedCcell);
                                 draggedButterfly = null;
                                 // check if game is over.
-                                // TODO: Decide what to do when game is over.
                                 if (isGameOver()) {
-                                    new CountDownTimer(30000, 1000) {
+                                    new CountDownTimer(15000, 1000) {
 
                                         public void onTick(long millisUntilFinished) {
                                             //mTextField.setText("Clean");
@@ -277,12 +294,29 @@ public class GameActivity extends AppCompatActivity {
 
         ccell.setVisibility(View.INVISIBLE);
         isCcellAlive.put(ccell, false);
+        playRandomSound(context, BOMBA_OPTIONS);
     }
 
-    private void playRandomSound() {
-        // TODO: play music.
+
+
+    public static void playRandomSound(Context context, int[] sounds) {
+        int soundID = sounds[new Random().nextInt(sounds.length)];
+        MediaPlayer mediaPlayer = MediaPlayer.create(context, soundID);
+        mediaPlayer.start();
+//        playRandomSound(context, soundID);
     }
 
+//    private static void playRandomSound(Context context, int soundID) {
+//        // Only play if the user has sounds enabled.
+//        if (Setting.getSafeBoolean(SyncStateContract.Constants.BOMBA_OPTIONS)) {
+//            try {
+//                MediaPlayer mediaPlayer = MediaPlayer.create(context, soundID);
+//                mediaPlayer.start();
+//            } catch (Exception e) {
+//                Log.d("Blacksmith", e.toString());
+//            }
+//        }
+//    }
     private boolean isGameOver() {
         for (View ccell : ccells) {
             if (isCcellAlive.get(ccell)) {
