@@ -26,8 +26,7 @@ public class BackgroundSoundService extends Service {
         Toast.makeText(getApplicationContext(), "Playing Fuiste in the Background",    Toast.LENGTH_SHORT).show();
         return startId;
     }
-    //public void onStart(Intent intent, int startId) {
-    //}
+
     @Override
     public void onDestroy() {
         mediaPlayer.stop();
