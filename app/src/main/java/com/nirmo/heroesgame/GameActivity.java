@@ -6,7 +6,10 @@ import android.content.Context;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.SyncStateContract;
@@ -42,8 +45,13 @@ public class GameActivity extends AppCompatActivity {
             R.raw.butterfly1,
             R.raw.butterfly2,
             R.raw.butterfly3,
-            R.raw.butterfly4,
-            R.raw.butterfly5
+            R.raw.butterfly4
+    };
+
+    private static final int BOMBA_OPTIONS[] = {
+            R.raw.bomba1,
+            R.raw.bomba2,
+            R.raw.bomba3
     };
 
     private View ccells[] = new View[NUMBER_OF_CCEllS];
@@ -54,20 +62,24 @@ public class GameActivity extends AppCompatActivity {
     private Point initialButterflyPosition;
     private View draggedCcell;
     private View draggedButterfly;
-    private Context context;
-
-    private static final int BOMBA_OPTIONS[] = {
-            R.raw.bomba1,
-            R.raw.bomba2,
-            R.raw.bomba3
-    };
+    private SoundPool soundPool;
+    private int[] bombaSounds;
+    private MediaPlayer ambientSoundMediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_board);
-        context = this;
         FrameLayout board = (FrameLayout) findViewById(R.id.game_board);
+
+        soundPool = new SoundPool.Builder()
+                .setMaxStreams(3)
+                .build();
+        ambientSoundMediaPlayer = MediaPlayer.create(this, R.raw.audio);
+        ambientSoundMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        ambientSoundMediaPlayer.setLooping(true);
+        ambientSoundMediaPlayer.setOnPreparedListener(
+                mediaPlayer -> ambientSoundMediaPlayer.start());
 
         ViewTreeObserver vto = board.getViewTreeObserver();
         vto.addOnGlobalLayoutListener (new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -79,10 +91,6 @@ public class GameActivity extends AppCompatActivity {
         });
     }
 
-    public void PlayBackgroundSound(View view) {
-        Intent intent = new Intent(GameActivity.this, BackgroundSoundService.class);
-        startService(intent);
-    }
     private void onRenderingReady(FrameLayout board) {
         initGame(board, NUMBER_OF_CCEllS, NUMBER_OF_BUTTERFLIES);
     }
@@ -90,6 +98,7 @@ public class GameActivity extends AppCompatActivity {
     private void initGame(FrameLayout board, int numberOfCcells, int numberOfButterflies) {
         ccells = new View[numberOfCcells];
         butterflies = new GifView[numberOfButterflies];
+        bombaSounds = new int[BOMBA_OPTIONS.length];
 
         // TODO: Choose different image on every time we start the game.
         ImageView background = findViewById(R.id.background);
@@ -104,6 +113,26 @@ public class GameActivity extends AppCompatActivity {
         for (int i = 0; i < butterflies.length; i++) {
             butterflies[i] = generateButterfly(facebox, board);
         }
+
+        for (int i = 0; i < bombaSounds.length; i++) {
+            bombaSounds[i] = soundPool.load(this, BOMBA_OPTIONS[i], 1);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ambientSoundMediaPlayer.pause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ambientSoundMediaPlayer.start();
+    }
+
+    private void playSound(int sound) {
+        soundPool.play(sound, 1, 1, 0, 0, 1);
     }
 
     private View generateCcell(View innerView, FrameLayout outerView) {
@@ -227,7 +256,7 @@ public class GameActivity extends AppCompatActivity {
                                             VideoView videoView = (VideoView) findViewById(R.id.VideoView);  //casting to VideoView is not Strictly required above API level 26
                                             videoView.setVideoPath("android.resource://" + getPackageName() + "/" + R.raw.gamefinish); //set the path of the video that we need to use in our VideoView
                                             videoView.start();  //start() method of the VideoView class will start the video to play
-                                            MediaController mediaController = new MediaController(context);
+                                            MediaController mediaController = new MediaController(getApplicationContext());
                                             //link mediaController to videoView
                                             mediaController.setAnchorView(videoView);
                                             //allow mediaController to control our videoView
@@ -294,29 +323,9 @@ public class GameActivity extends AppCompatActivity {
 
         ccell.setVisibility(View.INVISIBLE);
         isCcellAlive.put(ccell, false);
-        playRandomSound(context, BOMBA_OPTIONS);
+        playSound(bombaSounds[MathUtils.getRandomInRange(0, bombaSounds.length)]);
     }
 
-
-
-    public static void playRandomSound(Context context, int[] sounds) {
-        int soundID = sounds[new Random().nextInt(sounds.length)];
-        MediaPlayer mediaPlayer = MediaPlayer.create(context, soundID);
-        mediaPlayer.start();
-//        playRandomSound(context, soundID);
-    }
-
-//    private static void playRandomSound(Context context, int soundID) {
-//        // Only play if the user has sounds enabled.
-//        if (Setting.getSafeBoolean(SyncStateContract.Constants.BOMBA_OPTIONS)) {
-//            try {
-//                MediaPlayer mediaPlayer = MediaPlayer.create(context, soundID);
-//                mediaPlayer.start();
-//            } catch (Exception e) {
-//                Log.d("Blacksmith", e.toString());
-//            }
-//        }
-//    }
     private boolean isGameOver() {
         for (View ccell : ccells) {
             if (isCcellAlive.get(ccell)) {
