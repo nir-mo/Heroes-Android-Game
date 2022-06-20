@@ -42,8 +42,7 @@ public class GameActivity extends AppCompatActivity {
             R.raw.butterfly1,
             R.raw.butterfly2,
             R.raw.butterfly3,
-            R.raw.butterfly4,
-            R.raw.butterfly5
+            R.raw.butterfly4
     };
 
     private View ccells[] = new View[NUMBER_OF_CCEllS];
